@@ -1,0 +1,18 @@
+const db = require("../config/database");
+
+module.exports = {
+    async index(req, res) {
+        try {
+            const [rows] = await db.query(
+                "SELECT * FROM alunos ORDER BY nome"
+            );
+
+            res.json(rows);
+        } catch (error) {
+            console.error(error);
+            res.status(500).json({
+                erro: "Erro ao buscar alunos"
+            });
+        }
+    }
+};
