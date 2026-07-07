@@ -1,122 +1,60 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import heroImg from './assets/hero.png'
-import './App.css'
+import React, { useState, useEffect } from 'react';
+import api from './services/api';
+import FilterBar from './components/FilterBar';
+import AlunoTable from './components/AlunoTable';
 
 function App() {
-  const [count, setCount] = useState(0)
+    const [alunos, setAlunos] = useState([]);
+    const [filterNome, setFilterNome] = useState('');
+    const [filterTurma, setFilterTurma] = useState('');
+    const [loading, setLoading] = useState(true);
 
-  return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.jsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
+    // Busca os alunos uma única vez ao carregar a página
+    useEffect(() => {
+        api.get('/alunos')
+            .then((response) => {
+                setAlunos(response.data);
+                setLoading(false);
+            })
+            .catch((error) => {
+                console.error("Erro ao carregar alunos:", error);
+                setLoading(false);
+            });
+    }, []);
 
-      <div className="ticks"></div>
+    // Extrai a lista de turmas dinamicamente para o Select com base nos dados recebidos
+    const turmasDisponiveis = Array.from(
+        new Set(alunos.map((aluno) => aluno.nome_turma).filter(Boolean))
+    ).sort();
 
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
+    // Lógica de filtragem executada puramente em JavaScript
+    const alunosFiltrados = alunos.filter((aluno) => {
+        const matchesNome = aluno.nome.toLowerCase().includes(filterNome.toLowerCase());
+        const matchesTurma = filterTurma === '' || aluno.nome_turma === filterTurma;
+        return matchesNome && matchesTurma;
+    });
 
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
-  )
+    if (loading) {
+        return <div style={{ padding: '20px', fontFamily: 'sans-serif' }}>Carregando dados dos alunos...</div>;
+    }
+
+    return (
+        <div style={{ padding: '30px', fontFamily: 'sans-serif', maxWidth: '1200px', margin: '0 auto' }}>
+            <h1 style={{ color: '#2c3e50', borderBottom: '2px solid #2c3e50', paddingBottom: '10px' }}>
+                Sistema Escolar - Consulta de Alunos
+            </h1>
+            
+            <FilterBar 
+                filterNome={filterNome}
+                setFilterNome={setFilterNome}
+                filterTurma={filterTurma}
+                setFilterTurma={setFilterTurma}
+                turmasDisponiveis={turmasDisponiveis}
+            />
+
+            <AlunoTable alunos={alunosFiltrados} />
+        </div>
+    );
 }
 
-export default App
+export default App;
